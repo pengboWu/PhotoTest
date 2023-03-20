@@ -11,25 +11,27 @@ Widget::Widget(QWidget *parent)
       ResetBtn("还原",this),
       OpenBtn("打开文件",this),
       Alloffset(0,0),
-      label("100%",this)
+      label("100%",this),
+      inputTectF(this)
 {
-    ratio= 1.0;             //初始化图片缩放比例
+    ratio = 1.0;             //初始化图片缩放比例
     action = Widget::None;
 
     //新建栅格布局
-    QGridLayout *layout=new QGridLayout;
+    QGridLayout *layout = new QGridLayout;
 
     //设置按钮尺寸
-    BiBtn.setMaximumSize(100,40);
-    LeBtn.setMaximumSize(100,40);
-    LBtn.setMaximumSize(100,40);
-    RBtn.setMaximumSize(100,40);
-    UBtn.setMaximumSize(100,40);
-    DBtn.setMaximumSize(100,40);
-    ResetBtn.setMaximumSize(100,40);
-    OpenBtn.setMaximumSize(100,40);
-    Paint.setMinimumSize(700,600);
-    label.setMaximumSize(50,40);
+    BiBtn.setMaximumSize(100, 40);
+    LeBtn.setMaximumSize(100, 40);
+    LBtn.setMaximumSize(100, 40);
+    RBtn.setMaximumSize(100, 40);
+    UBtn.setMaximumSize(100, 40);
+    DBtn.setMaximumSize(100, 40);
+    ResetBtn.setMaximumSize(100, 40);
+    OpenBtn.setMaximumSize(100, 40);
+    Paint.setMinimumSize(600, 600);
+    label.setMaximumSize(50, 40);
+    inputTectF.setMaximumSize(100,40);
 
     //设置按钮尺寸
     BiBtn.setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
@@ -42,16 +44,20 @@ Widget::Widget(QWidget *parent)
     OpenBtn.setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 
     //向布局管理器添加组件
-    layout->addWidget(&Paint,0,0,-1,1);
-    layout->addWidget(&BiBtn,0,1,1,1);
-    layout->addWidget(&LeBtn,1,1,1,1);
-    layout->addWidget(&LBtn,2,1,1,1);
-    layout->addWidget(&RBtn,3,1,1,1);
-    layout->addWidget(&UBtn,4,1,1,1);
-    layout->addWidget(&DBtn,5,1,1,1);
-    layout->addWidget(&ResetBtn,6,1,1,1);
-    layout->addWidget(&OpenBtn,7,1,1,1);
-    layout->addWidget(&label,8,1,1,1);
+    layout->addWidget(&Paint, 0, 0, -1, 1);
+    layout->addWidget(&BiBtn, 0, 1, 1, 1);
+    layout->addWidget(&LeBtn, 1, 1, 1, 1);
+    layout->addWidget(&LBtn, 2, 1, 1, 1);
+    layout->addWidget(&RBtn,3, 1, 1, 1);
+    layout->addWidget(&UBtn,4, 1, 1, 1);
+    layout->addWidget(&DBtn, 5, 1, 1, 1);
+    layout->addWidget(&ResetBtn, 6, 1, 1, 1);
+    layout->addWidget(&OpenBtn,7, 1, 1, 1);
+    layout->addWidget(&inputTectF, 8, 1, 1, 1);
+    layout->addWidget(&label, 9, 1, 1, 1);
+
+
+    inputTectF.setEnabled(false);
 
     setLayout(layout);           //为部件设置布局管理器
 
@@ -77,8 +83,10 @@ Widget::Widget(QWidget *parent)
     //     OpenBtn.setGeometry(822,220,60,25);
     connect(&OpenBtn,SIGNAL(clicked()),this,SLOT(onOpenClicked()));
 
+    connect(&inputTectF, SIGNAL(editingFinished()), this, SLOT(onChangeImagePosition()));
+
     //     label.move(840,260);
-    resize(800,600);    //调整窗口大小
+    resize(600,600);    //调整窗口大小
 
     this->setWindowTitle("图片浏览器(请打开文件)");//设置窗口标题
 }
@@ -94,37 +102,28 @@ bool Widget::event(QEvent * event)
         QMouseEvent *mouse = dynamic_cast<QMouseEvent* >(event);
 
         //判断鼠标是否是左键按下,且鼠标位置是否在绘画区域
-        //if(mouse->button()==Qt::LeftButton &&Paint.contains(mouse->pos()))
-        if (mouse->button() == Qt::LeftButton)
-        {
+        //        if(mouse->button()==Qt::LeftButton && Paint.contains(mouse->pos())){
+        if (mouse->button() == Qt::LeftButton) {
             press = true;
             QApplication::setOverrideCursor(Qt::OpenHandCursor); //设置鼠标样式
-
             PreDot = mouse->pos();
         }
-
-    }
-    //检测鼠标松开
-    else if(event->type() == QEvent::MouseButtonRelease)
-    {
+    } else if(event->type() == QEvent::MouseButtonRelease){//检测鼠标松开
         QMouseEvent *mouse = dynamic_cast<QMouseEvent* >(event);
 
         //判断鼠标是否是左键释放,且之前是在绘画区域
-        if (mouse->button() == Qt::LeftButton && press )
-        {
+        if (mouse->button() == Qt::LeftButton && press ) {
             QApplication::setOverrideCursor(Qt::ArrowCursor); //改回鼠标样式
             press = false;
         }
     }
     //检测鼠标移动
-    if (event->type() == QEvent::MouseMove)              //移动图片
-    {
-        if(press)
-        {
+    if (event->type() == QEvent::MouseMove) {//移动图片
+        if (press) {
             QMouseEvent *mouse = dynamic_cast<QMouseEvent* >(event);
 
-            offset.setX(mouse->x() - PreDot.x());
-            offset.setY(mouse->y() - PreDot.y());
+            offset.setX(mouse->position().x() - PreDot.x());
+            offset.setY(mouse->position().ry() - PreDot.y());
             PreDot = mouse->pos();
             action = Widget::Move;
 
@@ -155,12 +154,13 @@ void Widget::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     //设置渲染方式
     painter.setRenderHints(QPainter::SmoothPixmapTransform | QPainter::Antialiasing | QPainter::TextAntialiasing);
-    painter.drawRect(Paint.x() - 1,Paint.y() - 1,Paint.width() + 1, Paint.height() + 1); //画框
+    painter.drawRect(Paint.x() - 1, Paint.y() - 1, Paint.width() + 1, Paint.height() + 1); //画框
 
-    if (image.isNull())
-    {
+    if (image.isNull()) {
         return;
     }
+
+    inputTectF.setEnabled(true);
 
     int NowW = ratio * pixW;
     int NowH = ratio * pixH;
@@ -191,26 +191,27 @@ void Widget::paintEvent(QPaintEvent *event)
         qDebug()<<"放大:"<<ratio;
     }
 
-    if (action == Widget::Amplification || action == Widget::Shrink || action == Widget::Reset) { //更新图片
-        NowW = ratio *pixW;
-        NowH = ratio *pixH;
+    if (action == Widget::Amplification || action == Widget::Shrink || action == Widget::Reset) { //放大，缩小，更新图片
+        NowW = ratio * pixW;
+        NowH = ratio * pixH;
 
         crtPix = pix.scaled(NowW, NowH, Qt::KeepAspectRatio, Qt::SmoothTransformation); //重新装载
         action = Widget::None;
     }
 
-    if (action == Widget::Move) { //移动
+    if (action == Widget::Move ) { //移动
         int offsetx=Alloffset.x() + offset.x();
         Alloffset.setX(offsetx);
 
         int offsety=Alloffset.y() + offset.y();
         Alloffset.setY(offsety);
+
         action = Widget::None;
     }
 
-    if (abs(Alloffset.x())>=(Paint.width() / 2 + NowW / 2 -10)) {//限制X偏移值
+    if (abs(Alloffset.x()) >= (Paint.width() / 2 + NowW / 2 - 10)) {//限制X偏移值
         if (Alloffset.x() > 0) {
-            Alloffset.setX(Paint.width() / 2 + NowW / 2 -10);
+            Alloffset.setX(Paint.width() / 2 + NowW / 2 - 10);
         } else {
             Alloffset.setX(-Paint.width() / 2 + -NowW / 2 + 10);
         }
@@ -224,13 +225,13 @@ void Widget::paintEvent(QPaintEvent *event)
         }
     }
 
-    int x = Paint.width() / 2 + Alloffset.x() - NowW / 2;
+    int x = Paint.width() / 2 + Alloffset.x() - NowW / 2;//确定draw起始点x坐标
 
     if (x < 0) {
         x = 0;
     }
 
-    int y = Paint.height() / 2 + Alloffset.y() - NowH / 2;
+    int y = Paint.height() / 2 + Alloffset.y() - NowH / 2;//确定draw起始点y坐标
     if (y < 0) {
         y = 0;
     }
@@ -255,7 +256,18 @@ void Widget::paintEvent(QPaintEvent *event)
         h = Paint.height() - y;
     }
 
-    painter.drawTiledPixmap(x + Paint.x(), y + Paint.y(), w, h, crtPix,sx,sy);  //绘画图形
+    painter.drawTiledPixmap(x + Paint.x(), y + Paint.y(), w, h, crtPix, sx, sy);  //绘画图形
+
+    qDebug() << "Paint.rect.width = " << Paint.rect().width();
+    qDebug() << "Paint.rect.height = " << Paint.rect().height();
+
+    QRectF selectSCope;
+
+    selectSCope = {(Paint.width() / 2 - rec.width()* ratio / 2  + Paint.x() + Alloffset.x()) - displacementCompensationW * ratio, \
+                   (Paint.height() / 2 -  rec.height()* ratio / 2 + Paint.y() + Alloffset.y()) - displacementCompensationH * ratio, \
+                   rec.width() * ratio, rec.height() * ratio};
+
+    painter.drawRect(selectSCope); //绘制选择框
 }
 
 //缩小按钮响应槽函数
@@ -333,15 +345,48 @@ void Widget::OnLeftClicked()
 }
 
 //右移按钮响应槽函数
-void Widget::OnRightClicked()
+void Widget::OnRightClicked(qint64 step)
 {
     action = Widget::Move;
-    offset.setX(20) ;
+    offset.setX(step) ;
     offset.setY(0) ;
 
     this->update();
 }
 
+//收到定位信号
+void Widget::onChangeImagePosition() {
+    ratio = 1.000;
+    label.setText("100%");
+
+    QStringList rectf = inputTectF.text().split(",");
+    qDebug() << "line edit input par =" << inputTectF.text();
+
+    rec = {rectf.at(0).toFloat(), rectf.at(1).toFloat(), rectf.at(2).toFloat(), rectf.at(3).toFloat()};
+
+    if (rec.x() < pixW / 2) {
+        Alloffset.setX(pixW / 2 - rec.x());
+         displacementCompensationW = (pixW / 2 - rec.x());
+    } else if (rec.x() > pixW / 2) {
+        Alloffset.setX(rec.x() - pixW / 2);
+        displacementCompensationW = (rec.x() - pixW / 2);
+    } else {
+        Alloffset.setX(0);
+    }
+
+    if (rec.y() < pixH / 2) {
+        Alloffset.setY(pixH / 2 - rec.y());
+        displacementCompensationH = (pixH / 2 - rec.y());
+    } else if (rec.y() > pixH / 2) {
+        Alloffset.setY(rec.y() - pixH / 2);
+        displacementCompensationH = (rec.y() - pixH / 2);
+    } else {
+        Alloffset.setY(0);
+    }
+    action = Widget::Reset;
+
+    this->update();
+}
 
 
 

@@ -11,19 +11,21 @@
 #include <QPainter>
 #include <QWheelEvent>
 #include <QApplication>
+#include <QLineEdit>
 
 class Widget : public QWidget
 {
     enum  Type {
-        None          = 0,
-        Amplification ,
+        None = 0,
+        Amplification,
         Shrink,
         Lift,
         Right,
         Up,
         Down,
         Move,
-        Reset
+        Reset,
+        Positioning
     };
 
     Q_OBJECT
@@ -43,6 +45,7 @@ private :
     QPoint offset;           //一次的图片偏移值
     QPoint Alloffset;          //总偏移
     QLabel label;
+    QLineEdit inputTectF;
 
     QPushButton  BiBtn;  //放大
     QPushButton  LeBtn;  //缩小
@@ -53,23 +56,25 @@ private :
     QPushButton  ResetBtn;
     QPushButton  OpenBtn;  //打开
 
-
-
     void AddComboItem(QComboBox* cmbo);
     bool event(QEvent * event);
     void wheelEvent(QWheelEvent* e);     //鼠标滑轮事件
+    QRectF rec = {10,40,60,40};
+
+    qint64 displacementCompensationW = 0; //定位补偿
+    qint64 displacementCompensationH = 0; //定位补偿
+
 private slots:
-    void    onUpClicked();
-    void    onDownClicked();
-    void    onResetClicked();
-    void    OnLeftClicked();
-    void    OnRightClicked();
-    void    onLittleClicked();
-    void    onBigClicked();
-    void    onOpenClicked();
+    void onUpClicked();
+    void onDownClicked();
+    void onResetClicked();
+    void OnLeftClicked();
+    void OnRightClicked(qint64 step = 20);
+    void onLittleClicked();
+    void onBigClicked();
+    void onOpenClicked();
     void paintEvent(QPaintEvent *event);
-
-
+    void onChangeImagePosition();
 };
 
 #endif // WIDGET_H
