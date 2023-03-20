@@ -29,7 +29,7 @@ Widget::Widget(QWidget *parent)
     DBtn.setMaximumSize(100, 40);
     ResetBtn.setMaximumSize(100, 40);
     OpenBtn.setMaximumSize(100, 40);
-    Paint.setMinimumSize(600, 600);
+    this->setMinimumSize(600, 600);
     label.setMaximumSize(50, 40);
     inputTectF.setMaximumSize(100,40);
 
@@ -55,7 +55,6 @@ Widget::Widget(QWidget *parent)
     layout->addWidget(&OpenBtn,7, 1, 1, 1);
     layout->addWidget(&inputTectF, 8, 1, 1, 1);
     layout->addWidget(&label, 9, 1, 1, 1);
-
 
     inputTectF.setEnabled(false);
 
@@ -102,7 +101,7 @@ bool Widget::event(QEvent * event)
         QMouseEvent *mouse = dynamic_cast<QMouseEvent* >(event);
 
         //判断鼠标是否是左键按下,且鼠标位置是否在绘画区域
-        //        if(mouse->button()==Qt::LeftButton && Paint.contains(mouse->pos())){
+        //        if(mouse->button()==Qt::LeftButton && this->contains(mouse->pos())){
         if (mouse->button() == Qt::LeftButton) {
             press = true;
             QApplication::setOverrideCursor(Qt::OpenHandCursor); //设置鼠标样式
@@ -154,7 +153,7 @@ void Widget::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     //设置渲染方式
     painter.setRenderHints(QPainter::SmoothPixmapTransform | QPainter::Antialiasing | QPainter::TextAntialiasing);
-    painter.drawRect(Paint.x() - 1, Paint.y() - 1, Paint.width() + 1, Paint.height() + 1); //画框
+//    painter.drawRect(this->x() - 1, this->y() - 1, this->width() + 1, this->height() + 1); //画框
 
     if (image.isNull()) {
         return;
@@ -209,62 +208,69 @@ void Widget::paintEvent(QPaintEvent *event)
         action = Widget::None;
     }
 
-    if (abs(Alloffset.x()) >= (Paint.width() / 2 + NowW / 2 - 10)) {//限制X偏移值
+    if (abs(Alloffset.x()) >= (this->width() / 2 + NowW / 2 - 10)) {//限制X偏移值
         if (Alloffset.x() > 0) {
-            Alloffset.setX(Paint.width() / 2 + NowW / 2 - 10);
+            Alloffset.setX(this->width() / 2 + NowW / 2 - 10);
         } else {
-            Alloffset.setX(-Paint.width() / 2 + -NowW / 2 + 10);
+            Alloffset.setX(-this->width() / 2 + -NowW / 2 + 10);
         }
     }
 
-    if (abs(Alloffset.y()) >= (Paint.height() / 2 + NowH / 2 -10)) {//限制Y偏移值
+    if (abs(Alloffset.y()) >= (this->height() / 2 + NowH / 2 -10)) {//限制Y偏移值
         if (Alloffset.y() > 0) {
-            Alloffset.setY(Paint.height() / 2 + NowH / 2 -10);
+            Alloffset.setY(this->height() / 2 + NowH / 2 -10);
         } else {
-            Alloffset.setY(-Paint.height() / 2 + -NowH / 2 + 10);
+            Alloffset.setY(-this->height() / 2 + -NowH / 2 + 10);
         }
     }
 
-    int x = Paint.width() / 2 + Alloffset.x() - NowW / 2;//确定draw起始点x坐标
+
+    int x = this->width() / 2 + Alloffset.x() - NowW / 2;//确定draw起始点x坐标
 
     if (x < 0) {
         x = 0;
     }
 
-    int y = Paint.height() / 2 + Alloffset.y() - NowH / 2;//确定draw起始点y坐标
+    int y = this->height() / 2 + Alloffset.y() - NowH / 2;//确定draw起始点y坐标
     if (y < 0) {
         y = 0;
     }
 
-    int  sx = NowW / 2 - Paint.width() / 2 - Alloffset.x();
+    int  sx = NowW / 2 - this->width() / 2 - Alloffset.x();
     if (sx < 0) {
         sx = 0;
     }
 
-    int  sy = NowH / 2 - Paint.height() / 2 - Alloffset.y();
+    int  sy = NowH / 2 - this->height() / 2 - Alloffset.y();
     if (sy < 0) {
         sy=0;
     }
 
-    int w =(NowW - sx)>Paint.width() ? Paint.width() : (NowW - sx);
-    if (w > (Paint.width() - x)) {
-        w = Paint.width() - x;
+    int w =(NowW - sx)>this->width() ? this->width() : (NowW - sx);
+    if (w > (this->width() - x)) {
+        w = this->width() - x;
     }
 
-    int h =(NowH - sy) > Paint.height() ? Paint.height() : (NowH - sy);
-    if (h > (Paint.height() - y)) {
-        h = Paint.height() - y;
+    int h =(NowH - sy) > this->height() ? this->height() : (NowH - sy);
+    if (h > (this->height() - y)) {
+        h = this->height() - y;
     }
 
-    painter.drawTiledPixmap(x + Paint.x(), y + Paint.y(), w, h, crtPix, sx, sy);  //绘画图形
+    painter.drawTiledPixmap(x + 0, y + 0, w, h, crtPix, sx, sy);  //绘画图形
 
-    qDebug() << "Paint.rect.width = " << Paint.rect().width();
-    qDebug() << "Paint.rect.height = " << Paint.rect().height();
+    qDebug() << "painter.drawTiledPixmap.x = " << x;
+    qDebug() << "painter.drawTiledPixmap.this->x = " << this->x();
+    qDebug() << "painter.drawTiledPixmap.y = " << y + this->y();
+    qDebug() << "painter.drawTiledPixmap.w = " << w;
+    qDebug() << "painter.drawTiledPixmap.h = " << h;
+
+    qDebug() << "this->rect.width = " << this->rect().width();
+    qDebug() << "this->rect.height = " << this->rect().height();
 
     QRectF selectSCope;
 
-    selectSCope = {(Paint.width() / 2 - rec.width()* ratio / 2  + Paint.x() + Alloffset.x()) - displacementCompensationW * ratio, \
-                   (Paint.height() / 2 -  rec.height()* ratio / 2 + Paint.y() + Alloffset.y()) - displacementCompensationH * ratio, \
+    selectSCope = {(this->width() / 2 - rec.width()* ratio / 2  + 0 + Alloffset.x()) - displacementCompensationW * ratio, \
+                   (this->height() / 2 -  rec.height()* ratio / 2 + 0 + Alloffset.y()) - displacementCompensationH * ratio, \
                    rec.width() * ratio, rec.height() * ratio};
 
     painter.drawRect(selectSCope); //绘制选择框
